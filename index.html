@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LENS — Visual Product Search</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #e8ff47;
+    --accent2: #47c8ff;
+    --text: #f0f0f5;
+    --muted: #6b6b80;
+    --danger: #ff4747;
+    --success: #47ffaa;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orb */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse, rgba(232,255,71,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 64px 0 48px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 10vw, 120px);
+    line-height: 0.9;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 span { color: var(--accent); }
+
+  .hero p {
+    font-weight: 300;
+    font-size: 17px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-section { margin: 48px 0 56px; }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 64px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(232,255,71,0.04) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.03);
+  }
+
+  .drop-zone:hover::before, .drop-zone.dragover::before { opacity: 1; }
+
+  .drop-icon {
+    width: 64px; height: 64px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.25s;
+  }
+
+  .drop-zone:hover .drop-icon { border-color: var(--accent); }
+
+  .drop-icon svg { width: 28px; height: 28px; stroke: var(--muted); transition: stroke 0.25s; }
+  .drop-zone:hover .drop-icon svg { stroke: var(--accent); }
+
+  .drop-text {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .drop-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .btn-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .btn-upload:hover { background: #f5ff6e; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,0.2); }
+
+  .btn-camera {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .btn-camera:hover { background: var(--accent); color: #0a0a0f; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,0.2); }
+
+  .btn-secondary {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--text);
+    color: var(--text);
+  }
+
+  #file-input { display: none; }
+
+  /* CAMERA MODAL */
+  .camera-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .camera-modal.active { display: flex; }
+
+  .camera-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .camera-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .camera-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .camera-video {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    display: block;
+  }
+
+  .camera-canvas { display: none; }
+
+  .camera-footer {
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn-capture {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-capture:hover { background: #f5ff6e; }
+
+  .btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding: 12px 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* PREVIEW + ANALYZE */
+  .analyze-panel {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 48px 0 56px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .analyze-panel.active { display: grid; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .preview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .status-dot.active { background: var(--success); animation: pulse 1.5s infinite; }
+  .status-dot.loading { background: var(--accent); animation: pulse 0.8s infinite; }
+
+  .preview-img-wrap {
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  #preview-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+
+  /* Detection overlay */
+  .detection-overlay {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+
+  .detection-box {
+    position: absolute;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(232,255,71,0.2), inset 0 0 40px rgba(232,255,71,0.05);
+    animation: boxFade 0.5s ease;
+  }
+
+  .detection-label {
+    position: absolute;
+    top: -28px; left: -1px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px 4px 0 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  @keyframes boxFade {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .analysis-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .analysis-body { padding: 24px; flex: 1; }
+
+  .analysis-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .analysis-placeholder svg { opacity: 0.3; }
+
+  .detected-item {
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .detected-item.active { display: block; }
+
+  .item-category {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .item-name {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+
+  .attr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .attr-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+
+  .attr-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .attr-val {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .confidence-bar {
+    margin-bottom: 24px;
+  }
+
+  .conf-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .conf-label { font-size: 12px; color: var(--muted); }
+  .conf-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--success); }
+
+  .conf-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .conf-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--success));
+    border-radius: 2px;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0%;
+  }
+
+  .btn-search {
+    width: 100%;
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-search:hover:not(:disabled) {
+    background: var(--accent);
+    color: #0a0a0f;
+  }
+
+  .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* LOADING STATE */
+  .scan-lines {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scan 1.5s ease-in-out infinite;
+    display: none;
+  }
+
+  .scan-lines.active { display: block; }
+
+  @keyframes scan {
+    0% { top: 0; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  /* RESULTS */
+  .results-section { display: none; animation: fadeUp 0.5s ease; }
+  .results-section.active { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .results-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+  }
+
+  .results-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 80px;
+  }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    animation: fadeUp 0.4s ease both;
+    position: relative;
+  }
+
+  .product-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  }
+
+  .match-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: rgba(10,10,15,0.85);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--success);
+    backdrop-filter: blur(8px);
+    z-index: 2;
+  }
+
+  .top-match .match-badge {
+    background: var(--accent);
+    color: #0a0a0f;
+    border-color: transparent;
+  }
+
+  .top-match-ribbon {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    padding: 4px 10px;
+    border-radius: 0 0 8px 0;
+    z-index: 3;
+    text-transform: uppercase;
+  }
+
+  .top-match .top-match-ribbon { display: block; }
+
+  .product-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+  }
+
+  .product-img-emoji {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    background: var(--surface2);
+    position: relative;
+  }
+
+  .product-img-emoji::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(17,17,24,0.6) 100%);
+  }
+
+  .product-body { padding: 16px; }
+
+  .product-brand {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .product-name {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .product-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .product-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .btn-cart {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-cart:hover { background: var(--accent); color: #0a0a0f; border-color: transparent; }
+
+  .buy-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+
+  .buy-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(232, 255, 71, 0.3);
+  }
+
+  /* LOADING SKELETON */
+  .skeleton-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .skel {
+    background: linear-gradient(90deg, var(--surface2) 25%, #1f1f2e 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .skel-img { width: 100%; aspect-ratio: 1; border-radius: 0; }
+  .skel-body { padding: 16px; }
+  .skel-line { height: 10px; margin-bottom: 8px; }
+  .skel-line.w60 { width: 60%; }
+  .skel-line.w80 { width: 80%; }
+  .skel-line.w40 { width: 40%; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 100;
+    max-width: 320px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-icon { font-size: 18px; }
+  .toast-msg { flex: 1; line-height: 1.4; }
+
+  /* ERROR */
+  .error-state {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .error-state.active { display: block; }
+  .error-state .error-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .error-state p { font-size: 15px; margin-bottom: 8px; }
+  .error-state small { font-size: 13px; color: var(--danger); opacity: 0.7; }
+
+  /* Reset btn */
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* HOW IT WORKS */
+  .how-section {
+    padding: 80px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .how-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 4px;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  .steps-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    position: relative;
+  }
+
+  .steps-row::before {
+    content: '';
+    position: absolute;
+    top: 28px; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), var(--border), transparent);
+  }
+
+  .step {
+    text-align: center;
+    padding: 0 8px;
+    position: relative;
+  }
+
+  .step-num {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin: 0 auto 16px;
+    background: var(--bg);
+    position: relative;
+    z-index: 1;
+  }
+
+  .step h3 { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+  .step p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .analyze-panel { grid-template-columns: 1fr; }
+    .steps-row { grid-template-columns: 1fr 1fr; }
+    .steps-row::before { display: none; }
+    .results-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    .results-grid { grid-template-columns: 1fr; }
+    .steps-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      LENS
+    </div>
+    <div class="header-tag">Visual Search Engine v2.4</div>
+  </header>
+
+  <section class="hero">
+    <h1>FIND IT<br><span>BY SIGHT</span></h1>
+    <p>Snap, upload, discover. Our AI isolates any item in your photo and matches it against thousands of products in milliseconds.</p>
+  </section>
+
+  <!-- UPLOAD -->
+  <div class="upload-section" id="upload-section">
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+      </div>
+      <p class="drop-text">Drop your photo here</p>
+      <p class="drop-sub">JPEG, PNG, WEBP — up to 10MB</p>
+      <div class="btn-group">
+        <button class="btn-upload" id="btn-choose-photo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Choose Photo
+        </button>
+        <button class="btn-camera" id="btn-use-camera">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/></svg>
+          Use Camera
+        </button>
+      </div>
+      <input type="file" id="file-input" accept="image/*">
+    </div>
+  </div>
+
+  <!-- CAMERA MODAL -->
+  <div class="camera-modal" id="camera-modal">
+    <div class="camera-container">
+      <div class="camera-header">
+        <span class="camera-label">Live Camera</span>
+      </div>
+      <video class="camera-video" id="camera-video" autoplay playsinline muted></video>
+      <canvas class="camera-canvas" id="camera-canvas"></canvas>
+      <div class="camera-footer">
+        <button class="btn-capture" id="btn-capture">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="10"/></svg>
+          Capture
+        </button>
+        <button class="btn-cancel" id="btn-cancel-camera">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYZE PANEL -->
+  <div class="analyze-panel" id="analyze-panel">
+    <div class="preview-card">
+      <div class="card-header">
+        <span class="card-label">Uploaded Image</span>
+        <div class="status-dot active" id="img-dot"></div>
+      </div>
+      <div class="preview-img-wrap">
+        <img id="preview-img" src="" alt="Preview">
+        <div class="scan-lines" id="scan-lines"></div>
+        <div class="detection-overlay" id="detection-overlay"></div>
+      </div>
+    </div>
+
+    <div class="analysis-card">
+      <div class="card-header">
+        <span class="card-label">Object Detection</span>
+        <div class="status-dot" id="analysis-dot"></div>
+      </div>
+      <div class="analysis-body">
+        <div class="analysis-placeholder" id="analysis-placeholder">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Awaiting image analysis…</span>
+        </div>
+
+        <div class="detected-item" id="detected-item">
+          <div class="item-category" id="item-category">—</div>
+          <div class="item-name" id="item-name">—</div>
+          <div class="attr-grid" id="attr-grid"></div>
+          <div class="confidence-bar">
+            <div class="conf-header">
+              <span class="conf-label">Match Confidence</span>
+              <span class="conf-val" id="conf-val">—</span>
+            </div>
+            <div class="conf-track"><div class="conf-fill" id="conf-fill"></div></div>
+          </div>
+          <div style="display: flex; gap: 12px; flex-direction: column;">
+            <button class="btn-search" id="btn-search" onclick="console.log('🔍 Search Catalog clicked!'); event.stopPropagation(); runCatalogSearch();">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Search Catalog
+            </button>
+            <button class="btn-secondary" onclick="console.log('🔄 Search Another Product clicked!'); event.stopPropagation(); resetAll();">Search Another Product</button>
+          </div>
+        </div>
+
+        <div class="error-state" id="error-state">
+          <div class="error-icon">⚠️</div>
+          <p>Could not analyze image</p>
+          <small id="error-msg">Unknown error</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="results-section">
+    <div class="results-header">
+      <div>
+        <div class="results-title">MATCHES</div>
+        <div class="results-meta" id="results-meta">Searching catalog…</div>
+      </div>
+      <button class="btn-reset" onclick="resetAll()">↩ New Search</button>
+    </div>
+    <div class="results-grid" id="results-grid"></div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section">
+    <div class="how-title">HOW IT WORKS</div>
+    <div class="steps-row">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Upload Photo</h3>
+        <p>Any real-world photo — product shots, lifestyle images, screenshots from social media.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Object Isolation</h3>
+        <p>Vision AI segments the primary item, filtering out clutter, lighting artifacts, and background noise.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Feature Extraction</h3>
+        <p>Color, texture, shape, material, and style vectors are computed and embedded in feature space.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>Catalog Match</h3>
+        <p>Nearest-neighbor retrieval surfaces the closest products ranked by visual similarity score.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo">LENS</div>
+    <span>Piyush Chougale(TY-AIML)· Copyright 2026</span>
+  </footer>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span class="toast-msg" id="toast-msg"></span>
+</div>
+
+<script>
+console.log('📦 LENS app initialized!');
+
+let currentImageBase64 = null;
+let detectedData = null;
+let cameraStream = null;
+
+// ── FILE HANDLING ──────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleFile(file);
+  else showToast('⚠️', 'Please drop an image file.');
+});
+
+// Add click listener to dropZone to only handle if not clicking a button
+dropZone.addEventListener('click', function(e) {
+  console.log('📍 Drop zone clicked! Target:', e.target, e.target.tagName);
+  
+  // Check if clicked element is a button, or inside a button
+  if (e.target.closest('button')) {
+    console.log('📍 Clicked a button, ignoring drop zone click!');
+    return;
+  }
+  
+  // If not a button, open file input
+  console.log('📍 Clicked drop zone, opening file input!');
+  document.getElementById('file-input').click();
+});
+
+fileInput.addEventListener('change', e => {
+  console.log('📂 File input changed!', e.target.files);
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  console.log('📂 handleFile() called with file:', file);
+  const reader = new FileReader();
+  reader.onload = e => {
+    console.log('📂 File loaded!');
+    const dataUrl = e.target.result;
+    currentImageBase64 = dataUrl.split(',')[1];
+
+    // Show preview
+    document.getElementById('preview-img').src = dataUrl;
+    document.getElementById('upload-section').style.display = 'none';
+    document.getElementById('analyze-panel').classList.add('active');
+    document.getElementById('results-section').classList.remove('active');
+    document.getElementById('detected-item').classList.remove('active');
+    document.getElementById('error-state').classList.remove('active');
+    document.getElementById('analysis-placeholder').style.display = 'flex';
+    document.getElementById('detection-overlay').innerHTML = '';
+
+    showToast('🖼️', 'Image loaded — analyzing with AI…');
+    console.log('📂 Calling analyzeImage()...');
+    analyzeImage();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── CAMERA FUNCTIONS ──────────────────────────────────────────────
+async function startCamera() {
+  console.log('📷 startCamera() called!');
+  try {
+    console.log('📷 Requesting back camera...');
+    cameraStream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'environment' } 
+    });
+    console.log('✅ Camera stream obtained!');
+    const video = document.getElementById('camera-video');
+    video.srcObject = cameraStream;
+    document.getElementById('camera-modal').classList.add('active');
+  } catch (err) {
+    console.error('❌ Back camera failed, trying front camera:', err);
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ 
+        video: true 
+      });
+      console.log('✅ Front camera stream obtained!');
+      const video = document.getElementById('camera-video');
+      video.srcObject = cameraStream;
+      document.getElementById('camera-modal').classList.add('active');
+    } catch (err2) {
+      console.error('❌ All camera attempts failed:', err2);
+      showToast('⚠️', 'Could not access camera. Please check permissions.');
+    }
+  }
+}
+
+function capturePhoto() {
+  console.log('📸 capturePhoto() called!');
+  const video = document.getElementById('camera-video');
+  const canvas = document.getElementById('camera-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  const dataUrl = canvas.toDataURL('image/jpeg');
+  console.log('📸 Photo captured, base64 length:', dataUrl.length);
+  currentImageBase64 = dataUrl.split(',')[1];
+  
+  cancelCamera();
+  
+  document.getElementById('preview-img').src = dataUrl;
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('analyze-panel').classList.add('active');
+  document.getElementById('results-section').classList.remove('active');
+  document.getElementById('detected-item').classList.remove('active');
+  document.getElementById('error-state').classList.remove('active');
+  document.getElementById('analysis-placeholder').style.display = 'flex';
+  document.getElementById('detection-overlay').innerHTML = '';
+
+  showToast('🖼️', 'Photo captured — analyzing with AI…');
+  console.log('📸 Calling analyzeImage()...');
+  analyzeImage();
+}
+
+function cancelCamera() {
+  console.log('❌ cancelCamera() called!');
+  if (cameraStream) {
+    console.log('🔴 Stopping camera tracks...');
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+  document.getElementById('camera-modal').classList.remove('active');
+}
+
+// ── ANALYZE IMAGE ──────────────────────────────────────────────
+async function analyzeImage() {
+  const dot = document.getElementById('analysis-dot');
+  const scanLines = document.getElementById('scan-lines');
+  dot.className = 'status-dot loading';
+  scanLines.classList.add('active');
+
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: currentImageBase64 })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    detectedData = data;
+    renderDetection(data);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('analysis-placeholder').style.display = 'none';
+    const errState = document.getElementById('error-state');
+    errState.classList.add('active');
+    document.getElementById('error-msg').textContent = err.message || 'API error';
+    showToast('❌', 'Analysis failed. Check your connection.');
+  } finally {
+    dot.className = 'status-dot active';
+    scanLines.classList.remove('active');
+  }
+}
+
+function renderDetection(d) {
+  document.getElementById('analysis-placeholder').style.display = 'none';
+  document.getElementById('error-state').classList.remove('active');
+
+  // Detection bounding box
+  const overlay = document.getElementById('detection-overlay');
+  const box = d.detectionBox;
+  const el = document.createElement('div');
+  el.className = 'detection-box';
+  el.style.top = (box.top * 100) + '%';
+  el.style.left = (box.left * 100) + '%';
+  el.style.width = (box.width * 100) + '%';
+  el.style.height = (box.height * 100) + '%';
+
+  const label = document.createElement('div');
+  label.className = 'detection-label';
+  label.textContent = d.category;
+  el.appendChild(label);
+  overlay.appendChild(el);
+
+  // Text
+  document.getElementById('item-category').textContent = d.category;
+  document.getElementById('item-name').textContent = d.itemName;
+
+  const attrGrid = document.getElementById('attr-grid');
+  attrGrid.innerHTML = '';
+  (d.attributes || []).forEach(a => {
+    attrGrid.innerHTML += `<div class="attr-chip"><div class="attr-key">${a.key}</div><div class="attr-val">${a.val}</div></div>`;
+  });
+
+  const pct = Math.round((d.confidence || 0.85) * 100);
+  document.getElementById('conf-val').textContent = pct + '%';
+  setTimeout(() => {
+    document.getElementById('conf-fill').style.width = pct + '%';
+  }, 100);
+
+  document.getElementById('detected-item').classList.add('active');
+  showToast('✓', `Detected: ${d.itemName}`);
+}
+
+// ── CATALOG SEARCH ─────────────────────────────────────────────
+async function runCatalogSearch() {
+  if (!detectedData) return;
+  document.getElementById('btn-search').disabled = true;
+  const resultsSection = document.getElementById('results-section');
+  const grid = document.getElementById('results-grid');
+  const meta = document.getElementById('results-meta');
+
+  resultsSection.classList.add('active');
+  meta.textContent = 'Searching catalog…';
+
+  // Show skeletons
+  grid.innerHTML = Array(8).fill(0).map((_, i) => `
+    <div class="skeleton-card" style="animation-delay:${i*0.05}s">
+      <div class="skel skel-img"></div>
+      <div class="skel-body">
+        <div class="skel skel-line w60" style="margin-bottom:8px"></div>
+        <div class="skel skel-line w80" style="margin-bottom:12px"></div>
+        <div class="skel skel-line w40"></div>
+      </div>
+    </div>
+  `).join('');
+
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const response = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemData: detectedData, imageBase64: currentImageBase64 })
+    });
+
+    const products = await response.json();
+    if (products.error) throw new Error(products.error.message);
+
+    renderResults(products);
+
+  } catch (err) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+      <p>Catalog search failed: ${err.message}</p>
+    </div>`;
+    showToast('❌', 'Catalog search failed.');
+  } finally {
+    document.getElementById('btn-search').disabled = false;
+  }
+}
+
+function renderResults(products) {
+  const grid = document.getElementById('results-grid');
+  const meta = document.getElementById('results-meta');
+  meta.textContent = `${products.length} products found · sorted by visual similarity`;
+
+  grid.innerHTML = products.map((p, i) => {
+    const isTop = i === 0;
+    const pct = Math.round((p.matchScore || 0.8) * 100);
+    const hasLink = p.link && p.link.trim() !== '';
+    return `
+      <div class="product-card ${isTop ? 'top-match' : ''}" style="animation-delay:${i*0.06}s">
+        <div class="top-match-ribbon">Best Match</div>
+        <div class="match-badge">${pct}% match</div>
+        <img src="${p.image}" class="product-img" alt="${p.name}" onerror="this.style.display='none'">
+        <div class="product-body">
+          <div class="product-brand">${p.brand}</div>
+          <div class="product-name">${p.name}</div>
+          <div class="product-footer">
+            <div class="product-price">₹${Number(p.price)}</div>
+            ${hasLink 
+              ? `<a href="${p.link}" target="_blank" class="buy-btn">Visit Website</a>`
+              : `<span class="buy-btn disabled" style="cursor:not-allowed;opacity:0.6">Not Available</span>`
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function addToCart(name) {
+  showToast('🛒', `Added "${name}" to cart`);
+}
+
+function resetAll() {
+  console.log('🔄 resetAll() called!');
+  
+  // Ensure camera is stopped
+  cancelCamera();
+  
+  document.getElementById('upload-section').style.display = 'block';
+  document.getElementById('analyze-panel').classList.remove('active');
+  document.getElementById('results-section').classList.remove('active');
+  document.getElementById('detected-item').classList.remove('active');
+  document.getElementById('error-state').classList.remove('active');
+  document.getElementById('analysis-placeholder').style.display = 'flex';
+  document.getElementById('detection-overlay').innerHTML = '';
+  document.getElementById('conf-fill').style.width = '0%';
+  document.getElementById('btn-search').disabled = false;
+  currentImageBase64 = null;
+  detectedData = null;
+  fileInput.value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let toastTimer;
+function showToast(icon, msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Add event listeners for buttons
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('✅ DOM loaded, adding button event listeners!');
+
+  const btnChoosePhoto = document.getElementById('btn-choose-photo');
+  if (btnChoosePhoto) {
+    btnChoosePhoto.addEventListener('click', function(e) {
+      console.log('🖼️ Choose Photo clicked!');
+      e.stopPropagation();
+      document.getElementById('file-input').click();
+    });
+  }
+
+  const btnUseCamera = document.getElementById('btn-use-camera');
+  if (btnUseCamera) {
+    btnUseCamera.addEventListener('click', function(e) {
+      console.log('📷 Use Camera clicked!');
+      e.stopPropagation();
+      startCamera();
+    });
+  }
+
+  const btnCapture = document.getElementById('btn-capture');
+  if (btnCapture) {
+    btnCapture.addEventListener('click', function(e) {
+      console.log('📸 Capture clicked!');
+      e.stopPropagation();
+      capturePhoto();
+    });
+  }
+
+  const btnCancelCamera = document.getElementById('btn-cancel-camera');
+  if (btnCancelCamera) {
+    btnCancelCamera.addEventListener('click', function(e) {
+      console.log('❌ Cancel clicked!');
+      e.stopPropagation();
+      cancelCamera();
+    });
+  }
+});
+</script>
+
+</body>
+</html>
