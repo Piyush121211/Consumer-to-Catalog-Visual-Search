@@ -1,8 +1,11 @@
 Pixel to Product: Consumer-to-Catalog Visual Search
 ​A real-time, multimodal visual search application that bridges the gap between physical objects in the real world and digital e-commerce catalogs. Simply snap a photo of any item, and the app will instantly identify it and fetch live shopping links, prices, and catalogs from across the web.
-​*OVERVIEW
+​
+
+*OVERVIEW
 ​This project was built to explore applied image processing, computer vision, and multimodal AI. It bypasses standard text-based search by allowing users to use a live camera feed to discover products.
 ​Instead of relying on basic image classification, this app uses a true Multimodal Pipeline (combining visual pixel data with extracted text features) to perform highly accurate internet scraping for real-time retail data.
+
 ​
 *FEATURES
 ​Real-Time Camera Integration: Native WebRTC and HTML5 canvas integration for live mobile and desktop camera capture.
@@ -10,11 +13,13 @@ Pixel to Product: Consumer-to-Catalog Visual Search
 ​Multimodal Web Scraping: Connects visual data and text descriptions to SerpApi's Google Lens engine for accurate real-world product matching.
 ​Direct E-Commerce Routing: Bypasses "dummy" carts and provides direct "Visit Website" routing to live retail stores (Amazon, Flipkart, etc.).
 ​Secure Image Bridging: Dynamically converts local Base64 image streams into secure public URLs via ImgBB for external API processing.
+
 ​
 *TECH STACK
 ​Frontend:
 ​HTML5, CSS3, Vanilla JavaScript
 ​WebRTC (Live Camera Access)
+
 ​
 *Backend & APIs:
 ​Node.js & Express.js
@@ -22,17 +27,20 @@ Pixel to Product: Consumer-to-Catalog Visual Search
 ​SerpApi: Google Lens Engine for live internet catalog scraping.
 ​ImgBB API: For temporary public image hosting and URL generation.
 ​
+
 *THE IMAGE PROCESSING PIPELINE (HOW IT WORKS)
 ​Capture: The browser extracts a static frame from the live video feed and compresses it into a Base64 encoded string.
 ​Analyze: The Node.js server sends the Base64 matrix to the Groq Vision model, which identifies the object and generates a rich text description.
 ​Bridge: The backend strips local headers and uploads the raw image data to ImgBB, receiving a public https URL in return.
 ​Search: The public Image URL and Groq's text description are sent to SerpApi to execute a Multimodal Search.
 ​Render: The backend parses the live JSON shopping data and renders the matching digital products back to the user interface.
+
 ​
 *LOCAL SETUP & INSTALLATION
 ​Prerequisites:
 ​Node.js installed
 ​API Keys for Groq, SerpApi, and ImgBB.
+
 
 ​->Installation Steps:
 ​Clone the repository
